@@ -13,7 +13,7 @@ from PIL import Image,ImageTk
 
 BUFFER_SIZE=2048
 IGNORE_TIME=0.05
-RENDER_SIZE=(940,560)
+RENDER_SIZE=(960,540)
 
 
 
@@ -84,14 +84,14 @@ def run(fp):
 			o=subprocess.run([f"{b}/bin/pov.exe",f"{td}/__tmp.ini"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout.strip().replace(b"\r\n",b"\n")[:-14]
 			os.remove(f"{td}/__tmp.ini")
 			if (os.path.exists(f"{td}/__out.png")):
-				r.geometry(f"{w//4}x{h//4}+{w*3//4}+{h*3//4}")
+				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w-RENDER_SIZE[0]}+{h-RENDER_SIZE[1]}")
 				img=Image.open(f"{td}/__out.png")
 				img=img.resize((w//4,h//4))
 				r._im=ImageTk.PhotoImage(image=img)
 				img.close()
 				os.remove(f"{td}/__out.png")
 			else:
-				r.geometry(f"{w//4}x{h//4}+{w}+{h}")
+				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w}+{h}")
 				sys.__stdout__.write(str(o,"utf-8"))
 		thr=threading.Thread(target=_run_r,args=(b,td,fp),kwargs={})
 		thr.daemon=True
@@ -150,7 +150,7 @@ def run(fp):
 	r.bind("<Escape>",lambda _:r.destroy())
 	w=r.winfo_screenwidth()
 	h=r.winfo_screenheight()
-	r.geometry(f"{w//4}x{h//4}+{w}+{h}")
+	r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w}+{h}")
 	c=tkinter.Canvas(r,width=w//4,height=h//4,highlightthickness=0,background="#000000",cursor="tcross")
 	c.pack()
 	r.update_idletasks()
