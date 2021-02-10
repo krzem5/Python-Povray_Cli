@@ -1,5 +1,8 @@
 #version 3.6
 #include "colors.inc"
+
+
+
 global_settings {
 	assumed_gamma 1.0
 }
