@@ -1,3 +1,3 @@
 @echo off
 cls
-python src/main.py
+python src/main.py file.pov
