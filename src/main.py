@@ -151,7 +151,7 @@ def run(fp):
 	w=r.winfo_screenwidth()
 	h=r.winfo_screenheight()
 	r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w}+{h}")
-	c=tkinter.Canvas(r,width=w//4,height=h//4,highlightthickness=0,background="#000000",cursor="tcross")
+	c=tkinter.Canvas(r,width=RENDER_SIZE[0],height=RENDER_SIZE[1],highlightthickness=0,background="#000000",cursor="tcross")
 	c.pack()
 	r.update_idletasks()
 	r._im=None
