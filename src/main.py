@@ -70,8 +70,8 @@ ctypes.windll.kernel32.WaitForSingleObject.restype=ctypes.wintypes.DWORD
 
 
 def run(fp):
-	def _render(b,td,fp):
-		def _run_r(b,td,fp):
+	def _render(td,fp):
+		def _run_r(td,fp):
 			ctypes.windll.kernel32.FillConsoleOutputCharacterA(ho,ctypes.c_char(b" "),sbi.dwSize.X*sbi.dwSize.Y,ctypes.wintypes._COORD(0,0),ctypes.byref(ctypes.wintypes.DWORD()))
 			ctypes.windll.kernel32.FillConsoleOutputAttribute(ho,7,sbi.dwSize.X*sbi.dwSize.Y,ctypes.wintypes._COORD(0,0),ctypes.byref(ctypes.wintypes.DWORD()))
 			ctypes.windll.kernel32.SetConsoleCursorPosition(ho,ctypes.wintypes._COORD(0,0))
@@ -80,8 +80,8 @@ def run(fp):
 				with open(f"{fp[:-3]}ini","r") as f:
 					dt=f.read()
 			with open(f"{td}/__tmp.ini","w") as f:
-				f.write(f"{dt}\nLibrary_Path={b}/bin/lib/include\nWidth={RENDER_SIZE[0]}\nHeight={RENDER_SIZE[1]}\nOutput_File_Name={td}/__out.png\nInput_File_Name={fp}\nOutput_To_File=true\nVerbose=false\nWarning_Console=false\nDebug_Console=false\nRender_Console=false\nStatistic_Console=false\n")
-			o=subprocess.run([f"{b}/bin/pov.exe",f"{td}/__tmp.ini"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout.strip().replace(b"\r\n",b"\n")[:-14]
+				f.write(f"{dt}\nLibrary_Path=bin/lib/include\nWidth={RENDER_SIZE[0]}\nHeight={RENDER_SIZE[1]}\nOutput_File_Name={td}/__out.png\nInput_File_Name={fp}\nOutput_To_File=true\nVerbose=false\nWarning_Console=false\nDebug_Console=false\nRender_Console=false\nStatistic_Console=false\n")
+			o=subprocess.run([f"bin/pov.exe",f"{td}/__tmp.ini"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout.strip().replace(b"\r\n",b"\n")[:-14]
 			os.remove(f"{td}/__tmp.ini")
 			if (os.path.exists(f"{td}/__out.png")):
 				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w-RENDER_SIZE[0]}+{h-RENDER_SIZE[1]}")
@@ -93,16 +93,15 @@ def run(fp):
 			else:
 				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w}+{h}")
 				sys.__stdout__.write(str(o,"utf-8"))
-		thr=threading.Thread(target=_run_r,args=(b,td,fp),kwargs={})
+		thr=threading.Thread(target=_run_r,args=(td,fp),kwargs={})
 		thr.daemon=True
 		thr.start()
 	def _read_dc(fp):
 		fp=os.path.abspath(fp)
 		d="/".join(fp.replace("\\","/").split("/")[:-1])
 		f=fp[len(d)+1:]
-		b=os.path.abspath("/".join(__file__.replace("\\","/").split("/")[:-1])+"/../")
 		td=os.path.abspath((os.getenv("TEMP") if os.getenv("TEMP") else os.getenv("TMP"))).replace("\\","/")
-		_render(b,td,fp)
+		_render(td,fp)
 		dh=ctypes.windll.kernel32.CreateFileW(d,FILE_LIST_DIRECTORY,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,0,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OVERLAPPED,0)
 		if (dh!=INVALID_HANDLE_VALUE):
 			atexit.register(lambda:ctypes.windll.kernel32.CloseHandle(dh))
@@ -122,7 +121,7 @@ def run(fp):
 					while (True):
 						ctypes.memmove(ctypes.addressof(dt),bf[i:],min(ctypes.sizeof(dt),len(bf)-i))
 						if (dt.Action==FILE_ACTION_MODIFIED and dt.FileName[:dt.FileNameLength//ctypes.sizeof(ctypes.wintypes.WCHAR)]==f):
-							_render(b,td,fp)
+							_render(td,fp)
 						if (dt.NextEntryOffset==0):
 							break
 						else:
@@ -134,6 +133,7 @@ def run(fp):
 			r._t_im=r._im
 			r._im=None
 		r.after(1000//60,_render_loop)
+	ctypes.windll.user32.SetProcessDPIAware()
 	sbi=ctypes.wintypes.CONSOLE_SCREEN_BUFFER_INFO()
 	ho=ctypes.windll.kernel32.GetStdHandle(-11)
 	ctypes.windll.kernel32.GetConsoleScreenBufferInfo(ho,ctypes.byref(sbi))
