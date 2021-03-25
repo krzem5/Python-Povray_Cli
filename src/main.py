@@ -86,6 +86,7 @@ def run(fp):
 			if (os.path.exists(f"{td}/__out.png")):
 				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w-RENDER_SIZE[0]}+{h-RENDER_SIZE[1]}")
 				img=Image.open(f"{td}/__out.png")
+				img=img.resize((w//4,h//4))
 				r._im=ImageTk.PhotoImage(image=img)
 				img.close()
 				os.remove(f"{td}/__out.png")
