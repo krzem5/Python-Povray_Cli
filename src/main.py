@@ -14,6 +14,7 @@ from PIL import Image,ImageTk
 BUFFER_SIZE=2048
 IGNORE_TIME=0.05
 RENDER_SIZE=(960,540)
+ANIMATION_LENGTH=5
 
 
 
@@ -81,14 +82,27 @@ def run(fp):
 					dt=f.read()
 			with open(f"{td}/__tmp.ini","w") as f:
 				f.write(f"{dt}\nLibrary_Path=bin/lib/include\nWidth={RENDER_SIZE[0]}\nHeight={RENDER_SIZE[1]}\nOutput_File_Name={td}/__out.png\nInput_File_Name={fp}\nOutput_To_File=true\nVerbose=false\nWarning_Console=false\nDebug_Console=false\nRender_Console=false\nStatistic_Console=false\n")
-			o=subprocess.run([f"bin/pov.exe",f"{td}/__tmp.ini"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout.strip().replace(b"\r\n",b"\n")[:-14]
-			os.remove(f"{td}/__tmp.ini")
+			o=subprocess.run(["bin/pov.exe",f"{td}/__tmp.ini"],stdout=subprocess.PIPE,stderr=subprocess.STDOUT).stdout.strip().replace(b"\r\n",b"\n")[:-14]
 			if (os.path.exists(f"{td}/__out.png")):
 				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w-RENDER_SIZE[0]}+{h-RENDER_SIZE[1]}")
 				img=Image.open(f"{td}/__out.png")
-				r._im=ImageTk.PhotoImage(image=img)
+				r._tm=0
+				r._tm_idx=0
+				r._im_l=[ImageTk.PhotoImage(image=img)]
 				img.close()
 				os.remove(f"{td}/__out.png")
+			l=tuple(os.listdir(td))
+			if (len(l)>1):
+				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w-RENDER_SIZE[0]}+{h-RENDER_SIZE[1]}")
+				r._im_l.clear()
+				for k in l:
+					if (k[-4:]==".png"):
+						img=Image.open(f"{td}/{k}")
+						r._im_l.append(ImageTk.PhotoImage(image=img))
+						img.close()
+						os.remove(f"{td}/{k}")
+				r._tm=0
+				r._tm_idx=0
 			else:
 				r.geometry(f"{RENDER_SIZE[0]}x{RENDER_SIZE[1]}+{w}+{h}")
 				sys.__stdout__.write(str(o,"utf-8"))
@@ -99,7 +113,9 @@ def run(fp):
 		fp=os.path.abspath(fp)
 		d="/".join(fp.replace("\\","/").split("/")[:-1])
 		f=fp[len(d)+1:]
-		td=os.path.abspath((os.getenv("TEMP") if os.getenv("TEMP") else os.getenv("TMP"))).replace("\\","/")
+		td=os.path.abspath((os.getenv("TEMP") if os.getenv("TEMP") else os.getenv("TMP"))).replace("\\","/").strip("/")+"/__povray_cli_data"
+		if (not os.path.exists(td)):
+			os.mkdir(td)
 		_render(td,fp)
 		dh=ctypes.windll.kernel32.CreateFileW(d,FILE_LIST_DIRECTORY,FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,0,OPEN_EXISTING,FILE_FLAG_BACKUP_SEMANTICS|FILE_FLAG_OVERLAPPED,0)
 		if (dh!=INVALID_HANDLE_VALUE):
@@ -126,11 +142,12 @@ def run(fp):
 						else:
 							i=dt.NextEntryOffset
 	def _render_loop():
-		if (r._im is not None):
+		ct=time.time()
+		if (r._tm<=ct and len(r._im_l)>0):
+			r._tm=ct+ANIMATION_LENGTH/len(r._im_l)
 			c.delete(tkinter.ALL)
-			c.create_image(0,0,image=r._im,anchor=tkinter.NW)
-			r._t_im=r._im
-			r._im=None
+			c.create_image(0,0,image=r._im_l[r._tm_idx],anchor=tkinter.NW)
+			r._tm_idx=(r._tm_idx+1)%len(r._im_l)
 		r.after(1000//60,_render_loop)
 	ctypes.windll.user32.SetProcessDPIAware()
 	sbi=ctypes.wintypes.CONSOLE_SCREEN_BUFFER_INFO()
@@ -153,7 +170,9 @@ def run(fp):
 	c=tkinter.Canvas(r,width=RENDER_SIZE[0],height=RENDER_SIZE[1],highlightthickness=0,background="#000000",cursor="tcross")
 	c.pack()
 	r.update_idletasks()
-	r._im=None
+	r._tm=0
+	r._tm_idx=0
+	r._im_l=[]
 	r.after(1000//60,_render_loop)
 	r.mainloop()
 
